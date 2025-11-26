@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import type { SentimentResult } from '../lib/sentiment-engine';
 import { giphyClient } from '../lib/giphy-client';
+import { HowItWorks } from './HowItWorks';
 
 interface Props {
     text: string;
@@ -12,11 +13,12 @@ interface Props {
 export const ExpressiveView: React.FC<Props> = ({ text, onChange, result, loading }) => {
     const [gifUrl, setGifUrl] = useState<string | null>(null);
     const [currentTag, setCurrentTag] = useState<string>('');
+    const [showFallback, setShowFallback] = useState(false);
 
     // Determine the sentiment tag/category
     const sentimentTag = useMemo(() => {
         if (loading) return 'thinking';
-        if (!result || !text) return 'listening';
+        if (!result || !text) return 'listening'; // Reverted to 'listening' for reliability
 
         const score = result ? result.score : 3;
 
@@ -32,9 +34,28 @@ export const ExpressiveView: React.FC<Props> = ({ text, onChange, result, loadin
         const timer = setTimeout(async () => {
             if (sentimentTag !== currentTag) {
                 setCurrentTag(sentimentTag);
+                setGifUrl(null); // Clear old GIF to avoid mismatch
+
+                if (sentimentTag === 'listening') {
+                    setShowFallback(true); // Show emoji immediately
+                    return; // Skip fetching GIF
+                }
+
+                setShowFallback(false); // Hide emoji initially
+
+                // Start fallback timer (2s delay)
+                const fallbackTimer = setTimeout(() => {
+                    setShowFallback(true);
+                }, 2000);
+
                 const url = await giphyClient.getRandomSticker(sentimentTag);
+
+                clearTimeout(fallbackTimer); // Cancel fallback if loaded in time
+
                 if (url) {
                     setGifUrl(url);
+                } else {
+                    setShowFallback(true); // Show fallback if failed
                 }
             }
         }, 500);
@@ -102,9 +123,11 @@ export const ExpressiveView: React.FC<Props> = ({ text, onChange, result, loadin
         };
     }, [result, text, loading]);
 
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     return (
         <div
-            className={`min-h-screen w-full flex flex-col items-center justify-center p-8 transition-all duration-1000 ease-in-out ${isRestless ? 'animate-breathing-glow' : ''}`}
+            className={`min-h-screen w-full flex flex-col items-center justify-center p-8 transition-all duration-1000 ease-in-out relative ${isRestless ? 'animate-breathing-glow' : ''}`}
             style={{ background: gradient }}
         >
             <div className="max-w-2xl w-full space-y-12 text-center">
@@ -121,7 +144,7 @@ export const ExpressiveView: React.FC<Props> = ({ text, onChange, result, loadin
                                 className="h-40 w-40 object-contain drop-shadow-xl"
                             />
                         ) : (
-                            <div className="text-9xl">{emoji}</div>
+                            showFallback ? <div className={`text-9xl ${isRestless ? 'animate-pulse' : ''}`}>{emoji}</div> : null
                         )}
                     </div>
                 </div>
@@ -137,7 +160,16 @@ export const ExpressiveView: React.FC<Props> = ({ text, onChange, result, loadin
                     Sentiment{result ? `: ${result.score.toFixed(1)} / 5.0` : ''}
                 </div>
 
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="absolute bottom-8 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-[10px] text-gray-400 hover:text-gray-800 hover:bg-white/40 active:bg-white/60 active:scale-95 uppercase tracking-widest transition-all duration-200 cursor-pointer"
+                >
+                    How this works
+                </button>
+
             </div>
+
+            <HowItWorks isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </div>
     );
 };
