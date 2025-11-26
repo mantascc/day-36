@@ -14,6 +14,7 @@ export const ExpressiveView: React.FC<Props> = ({ text, onChange, result, loadin
     const [gifUrl, setGifUrl] = useState<string | null>(null);
     const [currentTag, setCurrentTag] = useState<string>('');
     const [showFallback, setShowFallback] = useState(false);
+    const [isImageLoaded, setIsImageLoaded] = useState(false);
 
     // Determine the sentiment tag/category
     const sentimentTag = useMemo(() => {
@@ -31,10 +32,11 @@ export const ExpressiveView: React.FC<Props> = ({ text, onChange, result, loadin
 
     // Fetch GIF when tag changes
     useEffect(() => {
-        const timer = setTimeout(async () => {
+        const fetchGif = async () => {
             if (sentimentTag !== currentTag) {
                 setCurrentTag(sentimentTag);
                 setGifUrl(null); // Clear old GIF to avoid mismatch
+                setIsImageLoaded(false); // Reset image load state
 
                 if (sentimentTag === 'listening') {
                     setShowFallback(true); // Show emoji immediately
@@ -58,9 +60,9 @@ export const ExpressiveView: React.FC<Props> = ({ text, onChange, result, loadin
                     setShowFallback(true); // Show fallback if failed
                 }
             }
-        }, 500);
+        };
 
-        return () => clearTimeout(timer);
+        fetchGif();
     }, [sentimentTag, currentTag]);
 
     const { gradient, emojiScale, emoji, isRestless } = useMemo(() => {
@@ -141,7 +143,8 @@ export const ExpressiveView: React.FC<Props> = ({ text, onChange, result, loadin
                             <img
                                 src={gifUrl}
                                 alt="Sentiment Sticker"
-                                className="h-40 w-40 object-contain drop-shadow-xl"
+                                onLoad={() => setIsImageLoaded(true)}
+                                className={`h-40 w-40 object-contain drop-shadow-xl transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
                             />
                         ) : (
                             showFallback ? <div className={`text-9xl ${isRestless ? 'animate-pulse' : ''}`}>{emoji}</div> : null

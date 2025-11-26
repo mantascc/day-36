@@ -1,12 +1,3 @@
-const GIPHY_API_KEY = 'YOUR_BETA_KEY_HERE'; // We will use a public beta key if available or ask user. 
-// Actually, GIPHY beta keys are often rate limited or rotated. 
-// For this demo, I'll use a common public beta key found in docs/examples if possible, 
-// or I'll implement it such that it fails gracefully if the key is invalid.
-// A common public beta key is "GlVGYHwi6pwRb9CQ0tFG7JgqCa8TT4M2" (often used in tutorials) or similar.
-// Let's try to find a reliable one or just use a placeholder and ask the user to provide one if it fails.
-// Wait, the user asked for a "free reliable gif api". 
-// I will use the public beta key 'GlVGYHwi6pwRb9CQ0tFG7JgqCa8TT4M2' which is widely cited for development/testing.
-
 // API key from environment variables (Vite)
 const API_KEY = import.meta.env.VITE_GIPHY_API_KEY || '';
 
